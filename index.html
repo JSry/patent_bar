@@ -178,7 +178,9 @@
                     }, 1500);
                     return;
                 }
-                
+                 // Add these two lines HERE - right before the fetch:
+    console.log('Sending request to:', API_ENDPOINT);
+    console.log('Request body:', JSON.stringify({ message: message }));
                 // Call your API
                 const response = await fetch(API_ENDPOINT, {
                     method: 'POST',
@@ -191,7 +193,7 @@
                 });
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: \${response.status}`);
+                    throw new Error('HTTP error! status: ' + response.status);
                 }
                 
                 const data = await response.json();
@@ -206,7 +208,7 @@
     console.error('Error:', error);
     console.error('Full error details:', error.message);
     typingIndicator.style.display = 'none';
-    addMessage(`Sorry, I encountered an error: \${error.message}`, 'ai');
+    addMessage('Sorry, I encountered an error: ' + error.message, 'ai');
 
             } finally {
                 sendButton.disabled = false;
