@@ -112,13 +112,6 @@
             background-color: #ccc;
             cursor: not-allowed;
         }
-        .error-message {
-            color: #dc3545;
-            text-align: center;
-            padding: 10px;
-            margin-top: 10px;
-        }
-        /* Add timer display */
         .timer {
             color: #666;
             font-size: 12px;
@@ -154,7 +147,6 @@
     </div>
 
     <script>
-        // Your new Lambda Function URL (no more API Gateway!)
         const API_ENDPOINT = 'https://4fgknxlykbkpcsok7lvr6ulghi0tqzwc.lambda-url.us-east-2.on.aws/';
         
         let timerInterval;
@@ -182,14 +174,13 @@
             // Start timer display
             timerInterval = setInterval(() => {
                 const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                document.getElementById('timer').textContent = `\${elapsed}s`;
+                document.getElementById('timer').textContent = elapsed + 's';
             }, 100);
             
             try {
                 console.log('Sending request to Lambda Function URL...');
                 console.log('Request body:', JSON.stringify({ message: message }));
                 
-                // Call your Lambda Function URL directly
                 const response = await fetch(API_ENDPOINT, {
                     method: 'POST',
                     headers: {
@@ -203,6 +194,8 @@
                 console.log('Response status:', response.status);
                 
                 if (!response.ok) {
+                    const errorText = await response.text();
+                    console.log('Error response:', errorText);
                     throw new Error(`HTTP error! status: \${response.status}`);
                 }
                 
@@ -217,15 +210,14 @@
                 const totalTime = Math.floor((Date.now() - startTime) / 1000);
                 
                 // Display AI response
-                const responseText = data.response || data.message || 'No response received';
+                const responseText = data.response || data.message || data.body || 'No response received';
                 addMessage(responseText, 'ai');
                 
                 // Show response time
-                addMessage(`✓ Response time: \${totalTime} seconds`, 'system');
+                addMessage('Response time: ' + totalTime + ' seconds', 'system');
                 
             } catch (error) {
                 console.error('Error:', error);
-                console.error('Full error details:', error.message);
                 
                 // Hide typing indicator and stop timer
                 typingIndicator.style.display = 'none';
