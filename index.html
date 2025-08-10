@@ -203,9 +203,11 @@
                 addMessage(data.response || data.message || 'No response received', 'ai');
                 
             } catch (error) {
-                console.error('Error:', error);
-                typingIndicator.style.display = 'none';
-                addMessage('Sorry, I encountered an error. Please try again later.', 'ai');
+    console.error('Error:', error);
+    console.error('Full error details:', error.message);
+    typingIndicator.style.display = 'none';
+    addMessage(`Sorry, I encountered an error: \${error.message}`, 'ai');
+
             } finally {
                 sendButton.disabled = false;
             }
