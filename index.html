@@ -52,6 +52,7 @@
             background-color: #e9ecef;
             color: #333;
             align-self: flex-start;
+            white-space: pre-wrap;
         }
         .typing-indicator {
             display: none;
@@ -104,9 +105,8 @@
             cursor: pointer;
             font-size: 16px;
         }
-      #sendButton:hover {
-            background-color: #0056
-              background-color: #0056b3;
+        #sendButton:hover {
+            background-color: #0056b3;
         }
         #sendButton:disabled {
             background-color: #ccc;
@@ -117,6 +117,12 @@
             text-align: center;
             padding: 10px;
             margin-top: 10px;
+        }
+        /* Add timer display */
+        .timer {
+            color: #666;
+            font-size: 12px;
+            margin-left: 10px;
         }
     </style>
 </head>
@@ -137,6 +143,7 @@
             <span></span>
             <span></span>
             <span></span>
+            <span class="timer" id="timer"></span>
         </div>
         
         <div class="input-area">
@@ -147,8 +154,11 @@
     </div>
 
     <script>
-        // TODO: Replace with your actual API Gateway endpoint
+        // Your new Lambda Function URL (no more API Gateway!)
         const API_ENDPOINT = 'https://4fgknxlykbkpcsok7lvr6ulghi0tqzwc.lambda-url.us-east-2.on.aws/';
+        
+        let timerInterval;
+        let startTime;
         
         async function sendMessage() {
             const input = document.getElementById('userInput');
@@ -165,23 +175,21 @@
             input.value = '';
             sendButton.disabled = true;
             
-            // Show typing indicator
+            // Show typing indicator with timer
             typingIndicator.style.display = 'block';
+            startTime = Date.now();
+            
+            // Start timer display
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                document.getElementById('timer').textContent = `\${elapsed}s`;
+            }, 100);
             
             try {
-                // For demo purposes - remove this block when you have your API ready
-                if (API_ENDPOINT === 'YOUR_API_GATEWAY_ENDPOINT_HERE') {
-                    setTimeout(() => {
-                        typingIndicator.style.display = 'none';
-                        addMessage("I'm currently in demo mode. Please connect me to your AWS Bedrock API to provide real responses. Update the API_ENDPOINT in the code.", 'ai');
-                        sendButton.disabled = false;
-                    }, 1500);
-                    return;
-                }
-                 // Add these two lines HERE - right before the fetch:
-    console.log('Sending request to:', API_ENDPOINT);
-    console.log('Request body:', JSON.stringify({ message: message }));
-                // Call your API
+                console.log('Sending request to Lambda Function URL...');
+                console.log('Request body:', JSON.stringify({ message: message }));
+                
+                // Call your Lambda Function URL directly
                 const response = await fetch(API_ENDPOINT, {
                     method: 'POST',
                     headers: {
@@ -192,35 +200,61 @@
                     })
                 });
                 
+                console.log('Response status:', response.status);
+                
                 if (!response.ok) {
-                    throw new Error('HTTP error! status: ' + response.status);
+                    throw new Error(`HTTP error! status: \${response.status}`);
                 }
                 
                 const data = await response.json();
+                console.log('Response received:', data);
                 
-                // Hide typing indicator
+                // Hide typing indicator and stop timer
                 typingIndicator.style.display = 'none';
+                clearInterval(timerInterval);
+                
+                // Calculate total time
+                const totalTime = Math.floor((Date.now() - startTime) / 1000);
                 
                 // Display AI response
-                addMessage(data.response || data.message || 'No response received', 'ai');
+                const responseText = data.response || data.message || 'No response received';
+                addMessage(responseText, 'ai');
+                
+                // Show response time
+                addMessage(`✓ Response time: \${totalTime} seconds`, 'system');
                 
             } catch (error) {
-    console.error('Error:', error);
-    console.error('Full error details:', error.message);
-    typingIndicator.style.display = 'none';
-    addMessage('Sorry, I encountered an error: ' + error.message, 'ai');
-
+                console.error('Error:', error);
+                console.error('Full error details:', error.message);
+                
+                // Hide typing indicator and stop timer
+                typingIndicator.style.display = 'none';
+                clearInterval(timerInterval);
+                
+                addMessage('Sorry, I encountered an error: ' + error.message, 'ai');
             } finally {
                 sendButton.disabled = false;
+                input.focus();
             }
         }
         
         function addMessage(text, sender) {
             const chatMessages = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', sender === 'user' ? 'user-message' : 'ai-message');
+            messageDiv.classList.add('message');
+            
+            if (sender === 'user') {
+                messageDiv.classList.add('user-message');
+            } else if (sender === 'system') {
+                messageDiv.style.color = '#666';
+                messageDiv.style.fontSize = '12px';
+                messageDiv.style.fontStyle = 'italic';
+            } else {
+                messageDiv.classList.add('ai-message');
+            }
+            
             messageDiv.textContent = text;
-           chatMessages.appendChild(messageDiv);
+            chatMessages.appendChild(messageDiv);
             
             // Scroll to bottom
             chatMessages.scrollTop = chatMessages.scrollHeight;
